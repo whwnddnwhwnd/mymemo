@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Stylish&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-4">나홀로 메모장! <span class="badge badge-secondary">ver2.0</span></h1></h1>
+        <div>
+            <div class="form-group">
+                <input id="title" class="form-control" placeholder="메모 제목을 입력하세요!" style="width: 50%">
+            </div>
+            <div class="form-group">
+                <textarea id="comment" class="form-control" rows="2" placeholder="내용을 입력하세요!" style="width: 50%"></textarea>
+            </div>
+            <button type="button" id="btn_memo_save" class="btn btn-primary" onclick="save()">저장하기</button>
+        </div>
+    </div>
+    <div id="cards-box" class="card-columns">
+
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        read();
+    });
+
+    function save() {
+        let title = document.getElementById('title')
+        let comment = document.getElementById('comment')
+        let data = {
+            title: title.value
+            , comment: comment.value
+        }
+        $.ajax({
+            type: "post"
+            , url: "/save"
+            , data: JSON.stringify(data)
+            , contentType: "application/json; charset=UTF-8"
+            , dataType: "json"
+        }).done(function (result) {
+            location.reload();
+            alert("저장완료!");
+        });
+    }
+
+    function read() {
+        $.ajax({
+            type: "post"
+            , url: "/read"
+            , data: {}
+        }).done(function (result) {
+            let memos = result['result']
+            for (let i = 0; i < memos.length; i++) {
+                let temp = memos[i];
+                let title = temp['title'];
+                let comment = temp['comment'];
+                let index = temp['_id'];
+                let memo = '<div class="card" id=card_' + index + '>' +
+                    '<div class="card-body">' +
+                    '<h5 class="card-title">' + title + '</h5>' +
+                    '<p class="card-text">' + comment + '</p>' +
+                    '<button type="button" class="btn btn-primary btn-sm" onclick="change(' + index + ');">수정</button> ' +
+                    '<form action="/delete" method="post" style="display: inline"><input type=hidden name="index" value="' + index + '"><input type="submit" class="btn btn-danger btn-sm" value="삭제"></form>' +
+                    '</div>'
+                $("#cards-box").append(memo);
+            }
+        })
+    }
+
+
+    function change(index) {
+        let data = {
+            index: index
+        }
+        $.ajax({
+            type: "post"
+            , url: "/find_one"
+            , data: JSON.stringify(data)
+            , contentType: "application/json; charset=UTF-8"
+            , dataType: "json"
+        }).done(function (result) {
+            let memo = (result['result']);
+            let title = memo['title'];
+            let comment = memo['comment'];
+            $('#card_' + index).html("");
+            let temp = '<div class="card-body">' +
+                '<div class="form-group">' +
+                '<input id="update_title'+index+'" class="form-control" value="'+title+'">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<textarea id="update_comment'+index+'" class="form-control" rows="2">'+comment+'</textarea>' +
+                '</div>' +
+                '<button type="button" id="btn_memo_save" class="btn btn-primary" onclick="update('+index+')">수정</button>' +
+                '<input type="hidden" id="index'+index+'" value="' + index + '">' +
+                '</div>'
+            $('#card_' + index).append(temp);
+        });
+    }
+
+    function update(index) {
+        let title = document.getElementById('update_title'+index)
+        let comment = document.getElementById('update_comment'+index)
+        let count = document.getElementById('index'+index)
+        let data = {
+            title: title.value
+            , comment: comment.value
+            , index: count.value
+        }
+        $.ajax({
+            type: "post"
+            , url: "/update"
+            , data: JSON.stringify(data)
+            , contentType: "application/json; charset=UTF-8"
+            , dataType: "json"
+        }).done(function (result) {
+            location.reload();
+            alert("수정완료!");
+        });
+    }
+
+</script>
+</body>
+</html>
